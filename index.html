@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SIM7100E API Client</title>
+  <title>Module sim </title>
   <style>
       :root {
           --primary-color: #3498db;
@@ -317,8 +317,10 @@
 <body>
   <div class="container">
       <header>
-          <h1>SIM7100E API Client</h1>
-          <p>Giao tiếp với module SIM7100E qua cổng Serial</p>
+          <h1>Module sim </h1>
+          <p> 
+
+          </p>
       </header>
       
       <div class="card settings-card">
@@ -353,8 +355,8 @@
               <h2 class="card-title">Thông tin tín hiệu</h2>
               <div class="button-group">
                   <button id="checkSignalBtn">Đo tín hiệu</button>
-                  <button id="startMonitoringBtn" class="button-secondary">Giám sát liên tục</button>
-                  <button id="stopMonitoringBtn" class="button-danger" disabled>Dừng giám sát</button>
+                  <button id="startMonitoringBtn" class="button-secondary">Đo tín hiệu liên tục sau mỗi 3s</button>
+                  <button id="stopMonitoringBtn" class="button-danger" disabled>Dừng đo</button>
               </div>
               <div class="signal-meter">
                   <div class="signal-value" id="signalValue">--</div>
