@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Module sim với bản đồ</title>
+  <!-- Thêm CSS của Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+      :root {
+          --primary-color: #3498db;
+          --secondary-color: #2ecc71;
+          --dark-color: #2c3e50;
+          --light-color: #ecf0f1;
+          --danger-color: #e74c3c;
+          --warning-color: #f39c12;
+          --chart-gradient-1: rgba(52, 152, 219, 0.8);
+          --chart-gradient-2: rgba(52, 152, 219, 0.1);
+      }
+      
+      * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      }
+      
+      body {
+          background-color: #f5f7fa;
+          color: var(--dark-color);
+          line-height: 1.6;
+      }
+      
+      .container {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 20px;
+      }
+      
+      header {
+          background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+          color: white;
+          text-align: center;
+          padding: 20px 0;
+          border-radius: 10px;
+          margin-bottom: 20px;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      
+      h1 {
+          margin-bottom: 10px;
+      }
+      
+      .dashboard {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
+      }
+      
+      .card {
+          background-color: white;
+          border-radius: 10px;
+          padding: 20px;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+          margin-bottom: 20px;
+          transition: transform 0.3s, box-shadow 0.3s;
+      }
+      
+      .card:hover {
+          transform: translateY(-5px);
+          box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+      }
+      
+      .card-title {
+          font-size: 1.2rem;
+          margin-bottom: 15px;
+          color: var(--dark-color);
+          border-bottom: 2px solid var(--primary-color);
+          padding-bottom: 10px;
+          position: relative;
+      }
+      
+      .card-title:after {
+          content: '';
+          position: absolute;
+          bottom: -2px;
+          left: 0;
+          width: 50px;
+          height: 2px;
+          background-color: var(--secondary-color);
+      }
+      
+      .form-group {
+          margin-bottom: 15px;
+      }
+      
+      label {
+          display: block;
+          margin-bottom: 5px;
+          font-weight: bold;
+      }
+      
+      input[type="text"], textarea {
+          width: 100%;
+          padding: 12px;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          font-size: 16px;
+          transition: border-color 0.3s, box-shadow 0.3s;
+      }
+      
+      input[type="text"]:focus, textarea:focus {
+          border-color: var(--primary-color);
+          box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+          outline: none;
+      }
+      
+      textarea {
+          resize: vertical;
+          min-height: 150px;
+          font-family: 'Courier New', Courier, monospace;
+      }
+      
+      button {
+          background-color: var(--primary-color);
+          color: white;
+          border: none;
+          padding: 12px 20px;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 16px;
+          font-weight: 600;
+          transition: all 0.3s;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+      }
+      
+      button:hover {
+          background-color: #2980b9;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      
+      button:active {
+          transform: translateY(0);
+          box-shadow: none;
+      }
+      
+      .button-secondary {
+          background-color: var(--secondary-color);
+      }
+      
+      .button-secondary:hover {
+          background-color: #27ae60;
+      }
+      
+      .button-danger {
+          background-color: var(--danger-color);
+      }
+      
+      .button-danger:hover {
+          background-color: #c0392b;
+      }
+      
+      .button-group {
+          display: flex;
+          gap: 10px;
+          margin-top: 10px;
+          flex-wrap: wrap;
+      }
+      
+      /* Bảng điều khiển với thanh cuộn hiển thị và tự động kéo xuống */
+      .console {
+          background-color: #2c3e50;
+          color: #ecf0f1;
+          padding: 15px;
+          border-radius: 8px;
+          font-family: 'Courier New', Courier, monospace;
+          max-height: 160px;
+          overflow-y: auto;
+          margin-top: 15px;
+          box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+          scroll-behavior: smooth;
+      }
+      
+      .terminal-text {
+          white-space: pre-wrap;
+          word-break: break-all;
+      }
+      
+      .success {
+          color: var(--secondary-color);
+      }
+      
+      .error {
+          color: var(--danger-color);
+      }
+      
+      .warning {
+          color: var(--warning-color);
+      }
+      
+      .signal-meter {
+          margin-top: 20px;
+          text-align: center;
+      }
+      
+      .signal-bars {
+          display: flex;
+          justify-content: center;
+          align-items: flex-end;
+          height: 100px;
+          margin-bottom: 20px;
+      }
+      
+      .bar {
+          width: 20px;
+          margin: 0 5px;
+          background-color: #ddd;
+          border-radius: 5px 5px 0 0;
+          transition: height 0.3s, background-color 0.3s;
+      }
+      
+      .active {
+          background-color: var(--primary-color);
+          box-shadow: 0 2px 8px rgba(52, 152, 219, 0.5);
+      }
+      
+      .signal-value {
+          font-size: 28px;
+          font-weight: bold;
+          margin-bottom: 10px;
+          color: var(--dark-color);
+          text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+      }
+      
+      .signal-label {
+          font-size: 14px;
+          color: #666;
+      }
+  
+      .signal-chart-container {
+          height: 350px;
+          position: relative;
+          margin-top: 20px;
+          padding: 15px;
+          background-color: white;
+          border-radius: 10px;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+      }
+      
+      .signal-chart {
+          width: 100%;
+          height: 100%;
+          background-color: rgba(236, 240, 241, 0.5);
+          border-radius: 5px;
+      }
+      
+      .table-container {
+          max-height: 400px;
+          overflow-y: auto;
+          margin-top: 15px;
+      }
+      
+      table {
+          width: 100%;
+          border-collapse: collapse;
+      }
+      
+      th, td {
+          border: 1px solid #ddd;
+          padding: 8px;
+          text-align: center;
+      }
+      
+      th {
+          background-color: #f2f2f2;
+          font-weight: bold;
+      }
+      
+      .status-indicator {
+          display: inline-block;
+          width: 12px;
+          height: 12px;
+          border-radius: 50%;
+          background-color: var(--danger-color);
+          margin-right: 5px;
+          transition: background-color 0.3s, box-shadow 0.3s;
+      }
+      
+      .status-indicator.connected {
+          background-color: var(--secondary-color);
+          box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.2);
+          animation: pulse 2s infinite;
+      }
+      
+      @keyframes pulse {
+          0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.4); }
+          70% { box-shadow: 0 0 0 6px rgba(46, 204, 113, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+      }
+      
+      .status-text {
+          display: inline-block;
+          font-weight: bold;
+      }
+      
+      .settings-card {
+          margin-bottom: 20px;
+      }
+      
+      /* CSS cho bản đồ */
+      .map-container {
+          height: 400px;
+          border-radius: 10px;
+          overflow: hidden;
+          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+          margin-top: 20px;
+      }
+      
+      @media (max-width: 768px) {
+          .dashboard { grid-template-columns: 1fr; }
+          .card[style="grid-column: span 2;"] { grid-column: span 1 !important; }
+      }
+  </style>
+</head>
+<body>
+  <div class="container">
+      <header>
+          <h1>Module sim</h1>
+      </header>
+      
+      <div class="card settings-card">
+          <h2 class="card-title">Cài đặt kết nối</h2>
+          <div class="button-group">
+              <button id="connectBtn">Kết nối</button>
+              <button id="disconnectBtn" class="button-danger" disabled>Ngắt kết nối</button>
+          </div>
+          <div class="connection-status">
+              <div class="status-indicator" id="statusIndicator"></div>
+              <div class="status-text" id="statusText">Chưa kết nối</div>
+          </div>
+      </div>
+      
+      <div class="dashboard">
+          <!-- Thẻ điều khiển lệnh AT -->
+          <div class="card">
+              <h2 class="card-title">Lệnh AT</h2>
+              <div class="form-group">
+                  <label for="atCommand">Nhập lệnh AT:</label>
+                  <input type="text" id="atCommand" placeholder="Ví dụ: AT+CSQ">
+              </div>
+              <div class="button-group">
+                  <button id="sendAtBtn">Gửi lệnh</button>
+                  <button id="clearConsoleBtn" class="button-secondary">Xóa bảng điều khiển</button>
+              </div>
+              <div class="console">
+                  <div class="terminal-text" id="consoleOutput"></div>
+              </div>
+          </div>
+          
+          <!-- Thẻ thông tin tín hiệu -->
+          <div class="card">
+              <h2 class="card-title">Thông tin tín hiệu</h2>
+              <div class="button-group">
+                  <button id="checkSignalBtn">Đo tín hiệu</button>
+                  <button id="startMonitoringBtn" class="button-secondary">Đo liên tục sau mỗi 3s</button>
+                  <button id="stopMonitoringBtn" class="button-danger" disabled>Dừng đo</button>
+              </div>
+              <div class="signal-meter">
+                  <div class="signal-value" id="signalValue">--</div>
+                  <div class="signal-label">Chất lượng tín hiệu (RSSI)</div>
+                  <div class="signal-bars">
+                      <div class="bar" id="bar1" style="height: 20%"></div>
+                      <div class="bar" id="bar2" style="height: 40%"></div>
+                      <div class="bar" id="bar3" style="height: 60%"></div>
+                      <div class="bar" id="bar4" style="height: 80%"></div>
+                      <div class="bar" id="bar5" style="height: 100%"></div>
+                  </div>
+              </div>
+          </div>
+          
+          <!-- Thẻ biểu đồ và bảng dữ liệu tín hiệu -->
+          <div class="card" style="grid-column: span 2;">
+              <h2 class="card-title">Biểu đồ & bảng dữ liệu tín hiệu</h2>
+              <div class="chart-title">Cường độ tín hiệu RSSI (0-31)</div>
+              <div class="signal-chart-container">
+                  <canvas id="signalChart" class="signal-chart"></canvas>
+              </div>
+              <div class="table-container">
+                <table id="signalDataTable">
+                    <thead>
+                        <tr>
+                            <th>Thời gian</th>
+                            <th>RSSI</th>
+                            <th>Chất lượng</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="3">Chưa có dữ liệu tín hiệu.</td>
+                        </tr>
+                    </tbody>
+                </table>
+              </div>
+          </div>
+          
+          <!-- Thẻ bản đồ hiển thị vị trí module sim -->
+          <div class="card" style="grid-column: span 2;">
+              <h2 class="card-title">Bản đồ định vị</h2>
+              <div class="map-container" id="map"></div>
+          </div>
+      </div>
+  </div>
+
+  <!-- Thư viện Chart.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.1/chart.min.js"></script>
+  <!-- Thư viện Leaflet -->
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+      let serialPort = null;
+      let reader = null;
+      let writer = null;
+      let isConnected = false;
+      let isMonitoring = false;
+      let monitoringInterval = null;
+      let signalData = [];
+      let signalChart = null;
+      let lastCommandManual = false;
+      
+      const connectBtn = document.getElementById('connectBtn');
+      const disconnectBtn = document.getElementById('disconnectBtn');
+      const statusIndicator = document.getElementById('statusIndicator');
+      const statusText = document.getElementById('statusText');
+      const atCommandInput = document.getElementById('atCommand');
+      const sendAtBtn = document.getElementById('sendAtBtn');
+      const clearConsoleBtn = document.getElementById('clearConsoleBtn');
+      const consoleOutput = document.getElementById('consoleOutput');
+      const checkSignalBtn = document.getElementById('checkSignalBtn');
+      const startMonitoringBtn = document.getElementById('startMonitoringBtn');
+      const stopMonitoringBtn = document.getElementById('stopMonitoringBtn');
+      const signalValue = document.getElementById('signalValue');
+      const signalDataTable = document.getElementById('signalDataTable').getElementsByTagName('tbody')[0];
+      const signalBars = [
+          document.getElementById('bar1'),
+          document.getElementById('bar2'),
+          document.getElementById('bar3'),
+          document.getElementById('bar4'),
+          document.getElementById('bar5')
+      ];
+      
+      // Hàm log cho bảng điều khiển, tự động kéo scrollbar xuống cuối
+      function logToConsole(message, type = "") {
+          const p = document.createElement("p");
+          p.textContent = message;
+          if (type) p.classList.add(type);
+          consoleOutput.appendChild(p);
+          consoleOutput.scrollTop = consoleOutput.scrollHeight;
+      }
+      
+      function updateConnectionUI(connected) {
+          if (connected) {
+              statusIndicator.classList.add("connected");
+              statusText.textContent = "Đã kết nối";
+              connectBtn.disabled = true;
+              disconnectBtn.disabled = false;
+          } else {
+              statusIndicator.classList.remove("connected");
+              statusText.textContent = "Chưa kết nối";
+              connectBtn.disabled = false;
+              disconnectBtn.disabled = true;
+          }
+      }
+      
+      function initChart() {
+          const ctx = document.getElementById('signalChart').getContext('2d');
+          const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+          gradient.addColorStop(0, 'rgba(52, 152, 219, 0.7)');
+          gradient.addColorStop(1, 'rgba(52, 152, 219, 0.05)');
+          
+          signalChart = new Chart(ctx, {
+              type: 'line',
+              data: {
+                  labels: [],
+                  datasets: [{
+                      label: 'RSSI',
+                      data: [],
+                      backgroundColor: gradient,
+                      borderColor: 'rgba(52, 152, 219, 1)',
+                      borderWidth: 3,
+                      pointBackgroundColor: 'white',
+                      pointBorderColor: 'rgba(52, 152, 219, 1)',
+                      pointBorderWidth: 2,
+                      pointRadius: 4,
+                      pointHoverRadius: 7,
+                      pointHoverBackgroundColor: 'white',
+                      pointHoverBorderColor: 'rgba(52, 152, 219, 1)',
+                      pointHoverBorderWidth: 2,
+                      tension: 0.4,
+                      fill: true,
+                      cubicInterpolationMode: 'monotone'
+                  }]
+              },
+              options: {
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  animation: { duration: 1000, easing: 'easeOutQuart' },
+                  interaction: { mode: 'index', intersect: false },
+                  plugins: {
+                      legend: { display: false },
+                      tooltip: {
+                          backgroundColor: 'rgba(44, 62, 80, 0.9)',
+                          titleFont: { size: 14, weight: 'bold', family: "'Segoe UI', sans-serif" },
+                          bodyFont: { size: 13, family: "'Segoe UI', sans-serif" },
+                          padding: 12,
+                          cornerRadius: 6,
+                          displayColors: false,
+                          callbacks: {
+                              title: (tooltipItems) => tooltipItems[0].label,
+                              label: (context) => {
+                                  const value = context.raw;
+                                  const quality = getSignalQualityText(value);
+                                  return `RSSI: ${value} (${quality})`;
+                              },
+                              labelTextColor: () => '#fff'
+                          }
+                      }
+                  },
+                  scales: {
+                      y: {
+                          beginAtZero: true,
+                          max: 31,
+                          grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false },
+                          ticks: { font: { size: 12, family: "'Segoe UI', sans-serif" }, padding: 10, stepSize: 5, color: '#666' },
+                          title: { display: true, text: 'Cường độ tín hiệu (RSSI)', font: { size: 14, weight: 'bold', family: "'Segoe UI', sans-serif" }, padding: {top: 0, bottom: 10}, color: '#2c3e50' }
+                      },
+                      x: {
+                          grid: { display: false, drawBorder: false },
+                          ticks: { font: { size: 12, family: "'Segoe UI', sans-serif" }, color: '#666', maxRotation: 45, minRotation: 45, maxTicksLimit: 8 },
+                          title: { display: true, text: 'Thời gian', font: { size: 14, weight: 'bold', family: "'Segoe UI', sans-serif" }, padding: {top: 10, bottom: 0}, color: '#2c3e50' }
+                      }
+                  }
+              }
+          });
+      }
+      
+      function getSignalQualityText(rssi) {
+          if (rssi > 20) return "Tốt";
+          if (rssi > 15) return "Khá";
+          if (rssi > 10) return "Trung bình";
+          if (rssi > 5) return "Yếu";
+          return "Rất yếu";
+      }
+      
+      async function connectToPort() {
+          if (isConnected) {
+              logToConsole("Đã kết nối rồi, hãy ngắt kết nối trước", "warning");
+              return;
+          }
+          try {
+              serialPort = await navigator.serial.requestPort();
+              const baudRate = 115200;
+              await serialPort.open({ baudRate });
+              reader = serialPort.readable.getReader();
+              writer = serialPort.writable.getWriter();
+              isConnected = true;
+              updateConnectionUI(true);
+              readSerialData();
+              logToConsole(`Đã kết nối thành công với tốc độ baud ${baudRate}`, "success");
+              await sendCommand("AT");
+          } catch (error) {
+              logToConsole(`Lỗi khi kết nối: ${error.message}`, "error");
+              disconnectFromPort();
+          }
+      }
+      
+      async function disconnectFromPort() {
+          if (!isConnected) return;
+          try {
+              stopMonitoring();
+              if (reader) { await reader.cancel(); reader.releaseLock(); reader = null; }
+              if (writer) { writer.releaseLock(); writer = null; }
+              if (serialPort && serialPort.readable) { await serialPort.close(); }
+              isConnected = false;
+              updateConnectionUI(false);
+              logToConsole("Đã ngắt kết nối", "warning");
+          } catch (error) {
+              logToConsole(`Lỗi khi ngắt kết nối: ${error.message}`, "error");
+          }
+      }
+      
+      async function readSerialData() {
+          try {
+              while (isConnected && reader) {
+                  const { value, done } = await reader.read();
+                  if (done) break;
+                  if (value) {
+                      const text = new TextDecoder().decode(value);
+                      if (lastCommandManual) { logToConsole(text, "success"); }
+                      if (text.includes("+CSQ:")) { processSignalResponse(text); }
+                  }
+              }
+          } catch (error) {
+              if (isConnected) {
+                  logToConsole(`Lỗi khi đọc dữ liệu: ${error.message}`, "error");
+                  disconnectFromPort();
+              }
+          } finally {
+              if (reader) { reader.releaseLock(); reader = null; }
+          }
+      }
+      
+      async function sendCommand(command, manual = true) {
+          lastCommandManual = manual;
+          if (!isConnected || !writer) {
+              logToConsole("Không có kết nối", "error");
+              return;
+          }
+          try {
+              if (!command.endsWith('\r\n')) { command += '\r\n'; }
+              const encoder = new TextEncoder();
+              const data = encoder.encode(command);
+              await writer.write(data);
+              if (manual) { logToConsole(`> ${command.trim()}`); }
+          } catch (error) {
+              logToConsole(`Lỗi khi gửi lệnh: ${error.message}`, "error");
+          }
+      }
+      
+      async function checkSignal(manual = true) {
+          if (!isConnected) {
+              logToConsole("Không có kết nối", "error");
+              return;
+          }
+          try {
+              await sendCommand("AT+CSQ", manual);
+          } catch (error) {
+              logToConsole(`Lỗi khi kiểm tra tín hiệu: ${error.message}`, "error");
+          }
+      }
+      
+      function processSignalResponse(response) {
+          const match = response.match(/\+CSQ:\s*(\d+),/);
+          if (match && match[1]) {
+              const csq = parseInt(match[1]);
+              updateSignalUI(csq);
+              addSignalDataPoint(csq);
+          }
+      }
+      
+      function updateSignalUI(csq) {
+          if (csq === 99) {
+              signalValue.textContent = "RSSI: Không xác định";
+          } else {
+              const quality = getSignalQualityText(csq);
+              signalValue.innerHTML = `RSSI: ${csq} <span class="signal-badge">${quality}</span>`;
+          }
+          const signalQuality = csq > 31 ? 0 : csq / 31;
+          const activeBars = Math.ceil(signalQuality * 5);
+          signalBars.forEach((bar, index) => {
+              if (index < activeBars) { bar.classList.add('active'); }
+              else { bar.classList.remove('active'); }
+          });
+      }
+      
+      // Cập nhật biểu đồ: chỉ giữ 8 mục dữ liệu cuối cùng
+      function addSignalDataPoint(csq) {
+          const now = new Date();
+          const timeLabel = now.toLocaleTimeString();
+          const quality = getSignalQualityText(csq);
+          signalData.push({ time: timeLabel, value: csq, quality: quality });
+          if (signalDataTable.rows.length === 1 && signalDataTable.rows[0].cells[0].textContent.includes("Chưa có dữ liệu")) {
+              signalDataTable.deleteRow(0);
+          }
+          const row = signalDataTable.insertRow();
+          const cellTime = row.insertCell();
+          const cellRSSI = row.insertCell();
+          const cellQuality = row.insertCell();
+          cellTime.textContent = timeLabel;
+          cellRSSI.textContent = csq;
+          cellQuality.textContent = quality;
+          // Cập nhật dữ liệu cho biểu đồ
+          signalChart.data.labels.push(timeLabel);
+          signalChart.data.datasets[0].data.push(csq);
+          // Nếu số lượng mục vượt quá 8, xóa mục cũ nhất
+          if (signalChart.data.labels.length > 8) {
+              signalChart.data.labels.shift();
+              signalChart.data.datasets[0].data.shift();
+          }
+          signalChart.update();
+          const tableContainer = document.querySelector('.table-container');
+          tableContainer.scrollTop = tableContainer.scrollHeight;
+      }
+      
+      function startMonitoring() {
+          if (!isConnected) { logToConsole("Không có kết nối", "error"); return; }
+          if (isMonitoring) return;
+          isMonitoring = true;
+          startMonitoringBtn.disabled = true;
+          stopMonitoringBtn.disabled = false;
+          // Mỗi 3 giây kiểm tra tín hiệu và cập nhật biểu đồ
+          monitoringInterval = setInterval(() => { checkSignal(false); }, 3000);
+          logToConsole("Bắt đầu giám sát tín hiệu...", "success");
+      }
+      
+      function stopMonitoring() {
+          if (monitoringInterval) { clearInterval(monitoringInterval); monitoringInterval = null; }
+          isMonitoring = false;
+          startMonitoringBtn.disabled = false;
+          stopMonitoringBtn.disabled = true;
+          logToConsole("Dừng giám sát tín hiệu", "warning");
+      }
+      
+      // Khởi tạo bản đồ với Leaflet
+      function initMap() {
+          // Thiết lập vị trí ban đầu (ví dụ: Hà Nội)
+          const initialCoords = [21.0278, 105.8342];
+          const map = L.map('map').setView(initialCoords, 13);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              attribution: '&copy; OpenStreetMap contributors'
+          }).addTo(map);
+          // Ví dụ: Thêm marker vào vị trí ban đầu
+          L.marker(initialCoords).addTo(map)
+              .bindPopup('Vị trí module sim')
+              .openPopup();
+      }
+      
+      connectBtn.addEventListener("click", connectToPort);
+      disconnectBtn.addEventListener("click", disconnectFromPort);
+      sendAtBtn.addEventListener("click", () => {
+          const command = atCommandInput.value.trim();
+          if (command) { sendCommand(command, true); }
+      });
+      clearConsoleBtn.addEventListener("click", () => { consoleOutput.innerHTML = ""; });
+      checkSignalBtn.addEventListener("click", () => { checkSignal(true); });
+      startMonitoringBtn.addEventListener("click", startMonitoring);
+      stopMonitoringBtn.addEventListener("click", stopMonitoring);
+      
+      window.addEventListener("load", () => {
+          initChart();
+          initMap();
+      });
+  </script>
+</body>
+</html>
